@@ -17,7 +17,7 @@ Usage:
   todot [OPTION]
 Options:
   help				Show this message.
-  list (c/i)		List all tasks. Pass arguments to show (c)ompleted or (i)ncomplete tasks.
+  list (c/i)		List all tasks. Pass arguments to show (c)omplete or (i)ncomplete tasks.
   remind			List all incomplete tasks.
   add (item)		Add a new task.
   check (item)		Check off a task.
@@ -84,7 +84,9 @@ add () {
 
 #	Deletes an existing todo item.
 delete () {
-	modify "$1" 'd' 'Deleted a task!'
+	target=$1
+	while [[ $target = "" ]]; do read -p "What do you want to delete?" target; done
+	modify "$target" 'd' 'Deleted a task!'
 }
 
 #	Checks a todo item.
