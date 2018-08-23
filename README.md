@@ -15,8 +15,8 @@ Todot will keep track of its list in $HOME/.local/share/todot.
 + `check` - Mark a task as complete
 + `uncheck` - Mark a task as incomplete
 + `deleteall, checkall, uncheckall` - Applies respective command to all entries
-+ list - Show all tasks. Pass an argument to show (c)omplete or (i)ncomplete tasks.
-+ remind - If there are incomplete tasks, send a reminder via notification.
++ `list` - Show all tasks. Pass an argument to show (c)omplete or (i)ncomplete tasks.
++ `remind` - If there are incomplete tasks, send a reminder via notification.
 
 ## Requirements
 
