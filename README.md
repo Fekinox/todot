@@ -22,3 +22,6 @@ A shell-based todo list.
 
 + Requires GNU sed and notify-send.
 
+## Upcoming features
+
++ Perhaps a daemon? So you wouldn't need to use crontabs to handle notifications, clearing the list every day, etc. Shouldn't be too hard.
