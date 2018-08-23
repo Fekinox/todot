@@ -4,9 +4,9 @@ A shell-based todo list.
 
 ## About
 
-Todot is an extremely minimalistic todo list manager, taking up no more than 200 lines of shell script. It's simple enough to get the job done.
+`todot` is an extremely minimalistic todo list manager, taking up no more than 200 lines of shell script. It's simple enough to get the job done.
 
-Todot will keep track of its list in $HOME/.local/share/todot.
+`todot` will keep track of its list in `$HOME/.local/share/todot`.
 
 ### Usage
 
