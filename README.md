@@ -10,13 +10,17 @@ A shell-based todo list.
 
 ### Usage
 
-+ `add` - Add a new task
-+ `delete` - Remove a task
-+ `check` - Mark a task as complete
-+ `uncheck` - Mark a task as incomplete
-+ `deleteall, checkall, uncheckall` - Applies respective command to all entries
-+ `list` - Show all tasks. Pass an argument to show (c)omplete or (i)ncomplete tasks.
-+ `remind` - If there are incomplete tasks, send a reminder via notification.
+```
+todot list (c/i)	# List all todo list items and their IDs. Pass additional parameter to show (c)omplete or (i)ncomplete tasks.
+todot remind		# Send a notification if there are incomplete tasks.
+todot add "(item)"	# Add a new task.
+todot check (id)	# Mark a task as complete.
+todot uncheck (id)	# Mark a task as incomplete.
+todot delete (id)	# Delete a todo list item.
+todot checkall		# Mark all tasks as complete.
+todot uncheckall	# Mark all tasks as incomplete.
+todot deleteall		# Delete all tasks.
+```
 
 ## Requirements
 

@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-#	TODOT
-#	A shell-based todo list.
-#	Ideal for managing daily tasks.
+# TODOT
+# A shell-based todo list.
+# Ideal for managing daily tasks.
 #
 
 todotfile="$HOME/.local/share/todot"
@@ -11,129 +11,133 @@ donemsg="DONE >\t"
 
 alias ntfy="/usr/bin/notify-send -u normal"
 
-#	Prints usage
+# Prints usage
 usage () { cat <<EOF
 Usage:
   todot [OPTION]
+
+  Options marked (id) take an ID; show the IDs of all tasks using todot list.
 Options:
   help				Show this message.
-  list (c/i)		List all tasks. Pass arguments to show (c)omplete or (i)ncomplete tasks.
-  remind			List all incomplete tasks.
+  list (c/i)		List all tasks and their IDs. Pass arguments to show (c)omplete or (i)ncomplete tasks.
+  remind			Send a notification if there are incomplete tasks.
   add (item)		Add a new task.
-  check (item)		Check off a task.
-  uncheck (item)	Uncheck a task.
-  delete (item)		Delete a task.
+  check (id)		Check off a task.
+  uncheck (id)	Uncheck a task.
+  delete (id)		Delete a task.
   checkall			Check all tasks.
   uncheckall		Uncheck all tasks.
   delete			Delete all tasks.
 EOF
 }
 
-#	Sorts the todo list
+# Sorts todo list and updates ids
 sortfile () {
-	sort $todotfile -o $todotfile
+	tmp=`mktemp`
+	(sed 's/>.*>/>>/' | sort | gawk 'BEGIN{FS=">";OFS=">"}{$2=NR}{print $0}') < $todotfile > $tmp
+	cp $tmp $todotfile
+	rm $tmp
 }
 
-# 	Finds the first instance of todo list item.
-findfirst () {
-	target=">$1"'$'
-	echo "$(grep -n "$target" "$todotfile" | head -1)"
+# Finds ID of todo item given name.
+# Finds the closest result.
+getid () {
+	sed -n '/>.*>'"$1"'/{s/.*>\(.*\)>'"$1"'.*/\1/;p}' $todotfile | head -1
 }
 
-#	Takes three arguments:
-#	Search string
-#	Action (to pass to sed)
-#	Name of action
-#	Finish message
+# Get the name of a todo item given ID.
+getname () {
+	sed -n '/>'"$1"'>/{s/.*>'"$1"'>\(.*$\)/\1/;p}' $todotfile
+}
+
+# Takes three arguments:
+# Search string
+# Action (to pass to sed)
+# Name of action
+# Finish message
 modify () {
-	result=`findfirst "$1"`
-	[[ $result = "" ]] && echo -e "$1 not found in todotfile." && exit 1
-	txt=$(echo "$result" | awk -F '>' '{print $2}')
-	num=$(echo "$result" | awk -F ':' '{print $1}')
-	sed -i "$num""$2" $todotfile
-	ntfy "$3" "$txt"
+	[[ $(grep '>'"$1"'>' $todotfile) = "" ]] && echo -e "ID $1 not found" && exit 1
+	name=$(getname $1)
+	sed -i '/>'"$1"'>/'"$2" $todotfile
+	ntfy "$3" "$name"
 	sortfile
 }
 
-#	Sends notification using notify-send
+# Sends notification using notify-send
 remind () {
 	incomplete=`list i`
 	[[ $incomplete = "" ]] && exit 1;
 	ntfy 'Incomplete tasks!' "$(echo "$incomplete")"
 }
 
-#	Lists tasks. Pass an argument to specify complete or incomplete tasks.
+# Lists tasks. Pass an argument to specify complete or incomplete tasks.
 list () {
 	[[ !(-e $todotfile) ]] && >&2 echo 'Todotfile not found- try doing "todot add"?' && exit 1 
 	case "$1" in
-		[Cc]*)	sed -n '/^X>/{s/^X>/'"$donemsg"'/;p}' $todotfile ;;
-		[Ii]*)	sed -n '/^O>/{s/^O>/'"$todomsg"'/;p}' $todotfile ;;
+		[Cc]*)	gawk -F '>' '/^X/{{$1="'"$donemsg"'"}{$2="("$2")"}{print $0}}' $todotfile ;;
+		[Ii]*)	gawk -F '>' '/^O/{{$1="'"$todomsg"'"}{$2="("$2")"}{print $0}}' $todotfile ;;
 		*)		list i && list c ;;	
 	esac
-	rm -f sorted
 }
 
-#	Adds a new todo item
+# Adds a new todo item
 add () {
 	[[ $1 = "" ]] && >&2 echo "No arguments" && exit 1
 	[[ -e $todotfile ]] && [[ $(grep '^[OX]>'"$1"'$' $todotfile) != "" ]] && >&2 echo -e "Todo already exists" && exit 1
-	echo -e "O>$1" >> "$todotfile"
+	id=$([[ -e $todotfile ]] && echo $(($(sed -n '$=' $todotfile)+1)) || echo 1)
+	echo -e "O>$id>$1" >> "$todotfile"
 	echo -e "Successfully added new todo \"$1\""
 	sortfile
 }
 
-#	Deletes an existing todo item.
+# Deletes an existing todo item.
 delete () {
-	target=$1
-	while [[ $target = "" ]]; do read -p "What do you want to delete?" target; done
-	modify "$target" 'd' 'Deleted a task!'
+	target="$(echo "$1" | tr -dc '0-9''\n')"
+	[[ $target = "" ]] && echo -e "Please provide an ID." && list && exit 1
+	modify "$1" 'd' 'Deleted a task!'
 }
 
-#	Checks a todo item.
+# Checks a todo item.
 check () {
-	target=$1
-	while [[ $target = "" ]]; do read -p "What do you want to check?" target; done
-	[[ "$(grep '^X>'"$target"'$' $todotfile)" != "" ]] && >&2 echo 'Already checked!' && exit 1
-	modify "$target" 's/^O/X/' 'Checked a task!'
+	[[ "$(grep '^X>'"$1"'>' $todotfile)" != "" ]] && >&2 echo 'Already checked!' && exit 1
+	modify "$1" 's/^O/X/' 'Checked a task!'
 }
 
-#	Unchecks a todo item.
+# Unchecks a todo item.
 uncheck () {
-	target=$1
-	while [[ $target = "" ]]; do read -p "What do you want to uncheck?" target; done
-	[[ "$(grep '^O>'"$target"'$' $todotfile)" != "" ]] && >&2 echo 'Already unchecked!' && exit 1
-	modify "$target" 's/^X/O/' 'Unchecked a task!'
+	[[ "$(grep '^O>'"$1"'>' $todotfile)" != "" ]] && >&2 echo 'Already unchecked!' && exit 1
+	modify "$1" 's/^X/O/' 'Unchecked a task!'
 }
 
-#	Deletes all todo items.
+# Deletes all todo items.
 deleteall () {
 	rm $todotfile
 	ntfy 'Deleted all tasks!'
 }
 
-#	Checks all todo items.
+# Checks all todo items.
 checkall () {
 	sed -i 's/^O/X/' $todotfile
 	ntfy 'Checked all tasks!'
 }
 
-#	Unchecks all todo items.
+# Unchecks all todo items.
 uncheckall () {
 	sed -i 's/^X/O/' $todotfile
 	ntfy 'Unechecked all tasks!'
 }
 
 case "$1" in
-	list)		list "$2" ;;
 	help)		usage ;;
+	list)		list "$2" ;;
+	remind)		remind ;;
+	add)		add "$2" ;;
 	check)		check "$2" ;;
 	uncheck)	uncheck "$2" ;;
-	add)		add "$2" ;;
 	delete)		delete "$2" ;;
-	find)		search "$2" ;;
-	remind)		remind ;;
-	deleteall)	deleteall ;;
 	checkall)	checkall ;;
 	uncheckall)	uncheckall ;;
+	deleteall)	deleteall ;;
+	exec)		eval "$2" ;;
 	*)			usage ;;
 esac
