@@ -1,3 +1,7 @@
+This project has moved to GitLab.
+
+https://gitlab.com/Fekinox
+
 # todot
 
 A shell-based todo list.
